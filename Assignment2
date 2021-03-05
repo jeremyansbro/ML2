@@ -1,0 +1,346 @@
+library(ggplot2) #For histograms and plots
+library(gridExtra) #For multi plots
+library(grid)
+library(GGally) #Correlation plot
+library(caret) #for createDataPartition
+library(tree) #Decision Tree
+library(randomForest) #randomForest
+library(class)
+library(caret)
+library(e1071)
+library(tidyverse)
+
+
+#Import the wine quality dataset into the environment
+
+wine <- winequality
+
+#Check the number of observations and variables
+
+dim(wine)
+
+#Check for missing values
+sum(is.na(wine))
+
+#Check the distributions of the variables, look at quality range 3-8
+summary(wine)
+
+#Check the type of variables, all are continuous apart from quality
+str(wine)
+
+#Convert dependent variable to a categorical variable
+wine$quality <- as.factor(wine$quality)
+str(wine)
+
+#Produce a histogram to show frequency of each quality of wine, it shows the levels not the actual integer
+
+freq_quality <- as.numeric(wine$quality)
+ggplot(aes(x = freq_quality), data = wine) +
+  geom_histogram(binwidth = 1, color = 'black', fill = 'red') + 
+  labs(title="Histogram for Dependent Variable Quality", x="Quality", y="Count")
+
+
+#Create univariate histograms for each variable
+#Fixed acidity
+summary(wine$fixed.acidity)
+p1<-ggplot(aes(x = fixed.acidity), data = wine) +
+  geom_histogram(color = 'black', fill = 'red')
+
+#Volatile acitidty
+summary(wine$volatile.acidity)
+p2<-ggplot(aes(x = volatile.acidity), data = wine) +
+  geom_histogram(color = 'black', fill = 'red')
+
+#Citric acid
+summary(wine$citric.acid)
+p3<-ggplot(aes(x = citric.acid), data = wine) +
+  geom_histogram(color = 'black', fill = 'red')
+
+#Residual sugar
+summary(wine$residual.sugar)
+p4<-ggplot(aes(x = residual.sugar), data = wine) +
+  geom_histogram(color = 'black', fill = 'red')
+
+#Chlorides
+summary(wine$chlorides)
+p5<-ggplot(aes(x = chlorides), data = wine) +
+  geom_histogram(color = 'black', fill = 'red')
+
+#Free sulfur dioxide
+summary(wine$free.sulfur.dioxide)
+p6<-ggplot(aes(x = free.sulfur.dioxide), data = wine) +
+  geom_histogram(color = 'black', fill = 'red')
+
+#Total sulfur dioxide
+summary(wine$total.sulfur.dioxide)
+p7<-ggplot(aes(x = total.sulfur.dioxide), data = wine) +
+  geom_histogram(color = 'black', fill = 'red')
+
+#Density
+summary(wine$density)
+p8<-ggplot(aes(x = density), data = wine) +
+  geom_histogram(color = 'black', fill = 'red')
+
+#pH
+summary(wine$pH)
+p9<-ggplot(aes(x = pH), data = wine) +
+  geom_histogram(color = 'black', fill = 'red')
+
+#Sulphates
+summary(wine$sulphates)
+p10<-ggplot(aes(x = sulphates), data = wine) +
+  geom_histogram(color = 'black', fill = 'red')
+
+#Alcohol
+summary(wine$alcohol)
+p11<-ggplot(aes(x = alcohol), data = wine) +
+  geom_histogram(color = 'black', fill = 'red')
+
+
+#Plot these univariate histograms on the same grid
+grid.arrange(p1,p2,p3,p4,p5,p6,p7,p8,p9,p10,p11, ncol=3, top=textGrob("Histograms of Predictor Variables", gp=gpar(fontsize=12, font = 2)))
+
+#Correlation plot to check for multicollinearity between predictors
+ggcorr(wine[1:12],
+       nbreaks = 6,
+       label = TRUE,
+       label_size = 3,
+       color =  "grey", name = 'Predictor Correlations')
+
+#Shown nicely in a pairs 
+pairs.panels(wine[,1:12],
+             gap = 0,
+             bg = c("blue", "red")[wine$quality],
+             pch = 21)
+
+#Create boxplots to display the first 5 predictor variables
+
+par(mfrow=c(1,5), oma = c(1,1,0,0) + 0.1,  mar = c(3,3,1,1) + 0.1)
+
+boxplot(wine$fixed.acidity, col="slategray2", pch=19)
+mtext("Fixed Acidity", cex=0.8, side=1, line=2)
+
+boxplot(wine$volatile.acidity, col="slategray2", pch=19)
+mtext("Volatile Acidity", cex=0.8, side=1, line=2)
+
+boxplot(wine$citric.acid, col="slategray2", pch=19)
+mtext("Citric Acid", cex=0.8, side=1, line=2)
+
+boxplot(wine$residual.sugar, col="slategray2", pch=19)
+mtext("Residual Sugar", cex=0.8, side=1, line=2)
+
+boxplot(wine$chlorides, col="slategray2", pch=19)
+mtext("Chlorides", cex=0.8, side=1, line=2)
+
+#Show the last 6 variables
+
+par(mfrow=c(1,6), oma = c(1,1,0,0) + 0.1,  mar = c(3,3,1,1) + 0.1)
+
+boxplot(wine$alcohol, col="slategray2", pch=19)
+mtext("Alcohol", cex=0.8, side=1, line=2)
+
+boxplot(wine$density, col="slategray2", pch=19)
+mtext("density", cex=0.8, side=1, line=2)
+
+boxplot(wine$free.sulfur.dioxide, col="slategray2", pch=19)
+mtext("free.sulfur.dioxide", cex=0.8, side=1, line=2)
+
+boxplot(wine$pH, col="slategray2", pch=19)
+mtext("pH", cex=0.8, side=1, line=2)
+
+boxplot(wine$sulphates, col="slategray2", pch=19)
+mtext("sulphates", cex=0.8, side=1, line=2)
+
+boxplot(wine$total.sulfur.dioxide, col="slategray2", pch=19)
+mtext("total.sulfur.dioxide", cex=0.8, side=1, line=2)
+
+
+#Partition the dataset into training (70%) and testing (30%)
+
+TrainingIndex <- createDataPartition(wine$quality, p = 0.7, list = FALSE)
+TrainingSet <- wine[TrainingIndex,]
+TestingSet <- wine[-TrainingIndex,]
+set.seed(12345)
+
+#Create a decision tree on the training set
+
+tree_fit <- tree(quality ~., TrainingSet)
+tree_fit
+summary(tree_fit)
+
+#Plot the tree
+
+par(mfrow=c(1,1))
+
+plot(tree_fit)
+text(tree_fit,pretty=0)
+
+#Check the predictive accuracy of the model using a confusion matrix
+
+tree_pred <- predict(tree_fit, TestingSet, type="class")
+table1 <- table(tree_pred, TestingSet$quality)
+table1
+sum(diag(table1))/sum(table1)
+
+confusionMatrix(table(tree_pred, TestingSet$quality))
+
+#Prune the tree to see if it may have been overfitted
+
+cv_quality = cv.tree(tree_fit, FUN=prune.tree)
+cv_quality
+plot((cv_quality), main = "Graph Showing Deviance of Pruning")
+
+prune_quality = prune.misclass(tree_fit, best=6)
+plot(prune_quality);text(prune_quality,pretty=0)
+
+#Test the predictive accuracy of the pruned tree
+
+prune_pred=predict(prune_quality, TestingSet, type="class")
+table2 <- table(prune_pred, TestingSet$quality)
+sum(diag(table2))/sum(table2)
+
+#Create a random Forest model
+
+rand_forest <- randomForest(quality ~., data = TrainingSet)
+plot(rand_forest)
+
+forest_pred <- predict(rand_forest, TestingSet)
+table3 <- table(forest_pred, TestingSet$quality)
+table3
+sum(diag(table3))/sum(table3)
+
+#Use bagging (bootstrap aggregating) to reduce variance of random forest
+
+bag_wine =randomForest(quality~.,data=TrainingSet, mtry=11, ntree=10, importance =TRUE)
+bag_pred = predict(bag_wine, TestingSet)
+
+table5 <- table(bag_pred, TestingSet$quality)
+table5
+sum(diag(table5))/sum(table5)
+
+#Make plots to show the importance of each variable
+
+importance(bag_wine)
+varImpPlot((bag_wine), main = 'VarImpPlots of Random Forest and Bagging Model')
+par(mfrow=c(1,2))
+varImpPlot(rand_forest)
+
+#kNN nearest neighbour method
+#Refactoring quality range as low or high
+wine_split <- wine_red %>% 
+  mutate(quality = ifelse(quality <= 5 ,"Low" , "High"))
+wine_split
+
+wine_split$quality <- as.factor(wine_split$quality)
+
+# Plot new variable
+wine_split %>% ggplot(aes(x = quality))+ geom_bar(width = 0.2) + 
+ggtitle('Plot Showing High and Low Classes') +
+theme(plot.title = element_text(hjust = 0.5)) +
+  geom_bar(width = 0.5, fill="red")
+
+#Split the data into test and train with new quality split
+
+data_split <- createDataPartition(wine_split$quality, p = 0.7 , list= FALSE)
+
+wine_train <- wine_split[data_split ,]
+wine_test <- wine_split[-data_split,]
+
+#Standardise data 
+
+preProcValues <- preProcess(wine_train, method = c("center", "scale"))
+
+wine_trainsc <- predict(preProcValues, wine_train )
+wine_testsc <- predict(preProcValues, wine_test )
+
+# Check processed data
+summary(wine_trainsc$alcohol)
+
+#Check dataset variables are standardised around mean 0 and sd 1
+
+sd(wine_trainsc$alcohol)
+
+# Data processing
+
+wineTrain <- wine_trainsc[,-12]
+wineTest <- wine_testsc[,-12]
+
+wineTrain_label <- wine_trainsc[,12 , drop = TRUE]
+wineTest_label <- wine_testsc[,12 , drop = TRUE]
+
+# Basic knn model
+
+wineknns<- knn(train = wineTrain, test=wineTest, cl=wineTrain_label, k=39)
+
+# Evaluating model performance
+
+confusionMatrix(wineTest_label, wineknns)
+
+#Create a kNN model using cross-validation
+
+repeats = 3
+numbers = 10
+tunel = 20
+
+trnCntrl = trainControl(method = "repeatedcv",
+                        number = numbers,
+                        repeats = repeats,
+                        classProbs = TRUE,
+                        summaryFunction = twoClassSummary)
+
+# KNN using train method fron caret
+
+wineKnn <- train(quality~. , data = wine_trainsc, method = "knn",
+                 trControl = trnCntrl,
+                 metric = "ROC",
+                 tuneLength = tunel)
+
+# Summary of model
+wineKnn
+
+plot((wineKnn), main = 'Cross Validation To Find Optimal K', col ='red', xlab='N')
+
+# Predict values using model 
+test_pred <- predict(wineKnn ,wine_testsc, type = "prob")
+
+# Refactoring values in two classes
+test_pred$final <- as.factor(ifelse(test_pred$High > 0.5 ,"High","Low"))
+
+#Evaluating model performance
+confusionMatrix(wineTest_label, test_pred$final)
+
+#Try the original random forest model with the new high/low split
+
+rand_forest_split <- randomForest(quality ~., data = wine_train)
+par(mfrow=c(1,1))
+plot((rand_forest_split), main ='Random Forest Error Rate')
+
+forest_pred_split <- predict(rand_forest_split, wine_test)
+table10 <- table(forest_pred_split, wine_test$quality)
+table10
+sum(diag(table10))/sum(table10)
+
+#Try tuning the random forest model to see if it improves the accuracy
+
+tune <- tuneRF(wine_train[,-12], wine_train[,12],
+               stepFactor = 0.5,
+               plot=TRUE,
+               ntreeTry = 300,
+               trace = TRUE,
+               improve = 0.5)
+
+rf_tune <- randomForest(quality ~., data = wine_train,
+                                  ntree = 300,
+                                  mtry = 8,
+                                  importance = TRUE,
+                                  proximity = TRUE)
+
+rf_tune
+rf_tune_pred <- predict(rf_tune, wine_test)
+table8 <- table(rf_tune_pred, wine_test$quality)
+table8
+sum(diag(table8))/sum(table8)
+plot((rand_forest_split), main ='Random Forest Error Rate')
+
+
+
